@@ -19,10 +19,10 @@ with open(os.path.abspath(os.path.expanduser(CREDS_PATH)), "r") as credentials_f
     # user_email = credentials_file.readline().strip()
     # password = credentials_file.readline().strip()
 
-username = next(iter(users))
-passw = users[username]
-
 def print_laun(users):
+    username = next(iter(users))
+    passw = users[username]
+
     bookings = get_all_bookings(users)
     # print([start.time() for start, _, _ in bookings])
     next_book = get_next_finished_booking_if_running(bookings, delta=timedelta(minutes=10))
@@ -54,8 +54,10 @@ def print_laun(users):
         return
     print_wash_dry(username, passw)
 
-# print_wash_dry(username, passw)
 try:
     print_laun(users)
 except:
-    print("Error")
+    username = next(iter(users))
+    passw = users[username]
+    print_wash_dry(username, passw)
+    # print("Error")
