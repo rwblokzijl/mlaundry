@@ -146,7 +146,7 @@ def get_next_starting_booking(bookings, delta):
     return best
 
 def get_datetime(date_str):
-    date_str = "05-06 23:40"
+    # date_str = "05-06 23:40"
     format_str = "%Y-%d-%m %H:%M"
 
     years = [f"{now.year}-{date_str}", f"{now.year+1}-{date_str}",
