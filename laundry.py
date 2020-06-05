@@ -28,11 +28,15 @@ def print_laun(users):
     next_book = get_next_finished_booking_if_running(bookings, delta=timedelta(minutes=10))
     if next_book:
         start, end, mtype = next_book
-        if now < end:
+        if now < end: # Not done yet
             print(f'{machine_map[mtype]} is done at: {end.strftime("%H:%M")}')
             print(f'{machine_map[mtype]} done: {end.strftime("%H:%M")}')
-            print("#B8BB26")
-        else: #end < now
+            if now + timedelta(minutes=10) > end: # Done within 10 minutes
+                # Make notify but only once when its done
+                epoch = f"laundry-{start.strftime('%s')}"
+                os.system(f"""[ -f /tmp/{epoch} ] || (((echo "notify-send 'Laundry: ' '{machine_map[mtype]} Done!'" | at {end.strftime("%H:%M")}) &>/dev/null);touch /tmp/{epoch}) """)
+                print("#B8BB26")
+        else: #Done
             print(f'{machine_map[mtype]} finished!')
             print(f'{machine_map[mtype]} finished!')
             print("#FABD2F")
@@ -43,7 +47,7 @@ def print_laun(users):
         if start < now:
             print(f'{machine_map[mtype]} is booked for: {start.strftime("%H:%M")}')
             print(f'{machine_map[mtype]} booked: {start.strftime("%H:%M")}')
-        else:
+        else: # running now
             print(f'{machine_map[mtype]} is booked for: NOW!')
             print(f'{machine_map[mtype]} booked NOW!')
             print("#FABD2F")

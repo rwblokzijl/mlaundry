@@ -3,7 +3,7 @@ import mechanicalsoup
 from datetime import datetime, timedelta
 
 
-ACTUAL_WASHER_TIME = 50
+ACTUAL_WASHER_TIME = 55
 ACTUAL_DRYER_TIME  = 35
 
 actual_time_map = {
@@ -22,9 +22,10 @@ rev_machine_map = {
         }
 
 now = datetime.now()
+# now = datetime.now() - timedelta(minutes=15)
 # now = datetime.now() - timedelta(days=1)
 # now = datetime.now() - timedelta(hours=3)
-now = datetime.now() - timedelta(hours=2, minutes=0)
+# now = datetime.now() - timedelta(hours=2, minutes=0)
 
 # print(f'time: {now.strftime("%H:%M")}')
 
@@ -119,7 +120,6 @@ def print_wash_dry(user, password):
 # helpers
 
 def get_next_finished_booking_if_running(bookings, delta):
-
     best_dist = None
     best = None
     for booking in bookings:
@@ -146,6 +146,7 @@ def get_next_starting_booking(bookings, delta):
     return best
 
 def get_datetime(date_str):
+    date_str = "05-06 23:40"
     format_str = "%Y-%d-%m %H:%M"
 
     years = [f"{now.year}-{date_str}", f"{now.year+1}-{date_str}",
