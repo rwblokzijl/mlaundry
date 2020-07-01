@@ -44,12 +44,13 @@ def print_laun(users):
     start_book = get_next_starting_booking(bookings, delta=timedelta(minutes=10))
     if start_book:
         start, end, mtype = start_book
+        wash, dry = get_avalability(username, passw)
         if start > now:
-            print(f'{machine_map[mtype]} is booked for: {start.strftime("%H:%M")}')
-            print(f'{machine_map[mtype]} booked: {start.strftime("%H:%M")}')
+            print(f'{machine_map[mtype]} is booked for: {start.strftime("%H:%M")} ({wash}/{dry})')
+            print(f'{machine_map[mtype]} booked: {start.strftime("%H:%M")} ({wash}/{dry})')
         else: # running now
-            print(f'{machine_map[mtype]} is booked for: NOW!')
-            print(f'{machine_map[mtype]} booked NOW!')
+            print(f'{machine_map[mtype]} is booked for: NOW! ({wash}/{dry})')
+            print(f'{machine_map[mtype]} booked NOW! ({wash}/{dry})')
             print("#FABD2F")
         return
     print_wash_dry(username, passw)
@@ -61,3 +62,5 @@ except:
     passw = users[username]
     print_wash_dry(username, passw)
     # print("Error")
+
+# print_laun(users)
