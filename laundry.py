@@ -44,7 +44,7 @@ def print_laun(users):
     start_book = get_next_starting_booking(bookings, delta=timedelta(minutes=10))
     if start_book:
         start, end, mtype = start_book
-        if start < now:
+        if start > now:
             print(f'{machine_map[mtype]} is booked for: {start.strftime("%H:%M")}')
             print(f'{machine_map[mtype]} booked: {start.strftime("%H:%M")}')
         else: # running now
