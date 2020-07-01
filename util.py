@@ -22,6 +22,7 @@ rev_machine_map = {
         }
 
 now = datetime.now()
+# datetime(2020, 7, 1, 9, 50)
 # now = datetime.now() - timedelta(minutes=15)
 # now = datetime.now() - timedelta(days=1)
 # now = datetime.now() - timedelta(hours=3)
@@ -138,7 +139,7 @@ def get_next_starting_booking(bookings, delta):
     for booking in bookings:
         start, end, mtype = booking
 
-        if now + delta < start:
+        if now - delta < start:
             dist = abs(end - now)
             if best_dist is None or dist < best_dist:
                 best_dist = dist
