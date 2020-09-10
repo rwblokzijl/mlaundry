@@ -1,4 +1,6 @@
 import mechanicalsoup
+import requests
+import os
 
 from datetime import datetime, timedelta
 
@@ -30,10 +32,34 @@ now = datetime.now()
 
 # print(f'time: {now.strftime("%H:%M")}')
 
-# browser stuff
+# get login info from file
+def get_users(CREDS_PATH = "~/.ssh/laundry.creds"):
+    with open(os.path.abspath(os.path.expanduser(CREDS_PATH)), "r") as credentials_file:
+        users = dict()
+        sessions = dict()
+        for line in credentials_file:
+            user = line.split()
+            if len(user) == 2:
+                user.append(None)
+            users[user[0]] = user[1]
+            sessions[user[0]] = user[2]
+        return users
 
-def get_logged_browser(user_email, password):
+# browser stuff
+def open_browser_with_chromium_session(username, password, session_key=None):
     browser = mechanicalsoup.StatefulBrowser()
+
+    cookie_obj = requests.cookies.create_cookie(name='PHPSESSID', value='VF8mr%2CxGqkZdBWWCb1Gqw5YCog8', domain='duwo.multiposs.nl')
+    browser.session.cookies.set_cookie(cookie_obj)  # This will add your new cookie to existing cookies
+
+    get_logged_browser(username, password, browser=browser)
+
+    os.system("chromium https://duwo.multiposs.nl/main.php &")
+
+
+def get_logged_browser(user_email, password, browser=None):
+    if not browser:
+        browser = mechanicalsoup.StatefulBrowser()
 
     # get the login page
     response = browser.open("https://duwo.multiposs.nl/login/index.php", verify=False)
@@ -170,4 +196,21 @@ def get_all_bookings(users):
     for user_email, password in users.items():
         ans += get_bookings(user_email, password)
     return ans
+
+
+def get_time(user, password):
+    browser = get_logged_browser(user, password)
+
+    # get the Machine Availability "sub" page
+    response = browser.open("https://duwo.multiposs.nl/MachineAvailability.php", verify=False)
+
+    # parse it for data
+    page = browser.get_current_page()
+
+    # get the second and third row of the only table in the page
+    time = page.find('h').text
+
+    format_str = "%m-%d-%y %H:%M:%S"
+
+    return time
 

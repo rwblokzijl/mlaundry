@@ -1,0 +1,7 @@
+{
+    "laundry*.py": {"alternate": "test{dirname}/test_{basename}.py"},
+    "test**/test_*.py": {"alternate": "laundry/{dirname}/{basename}.py"},
+
+    "*.py": {"alternate": "test/__main__/test_{}.py"},
+    "test/__main__/test_*.py": {"alternate": "{}.py"}
+}
