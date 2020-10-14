@@ -25,4 +25,13 @@ class TestUtil(unittest.TestCase):
         time = util.get_time(username, passw)
         print(time)
 
+    def test_login(self):
+        users = util.get_users()
+        username = next(iter(users))
+        passw = users[username]
+
+        util.get_logged_browser(username, passw)
+        print(response)
+
+
 

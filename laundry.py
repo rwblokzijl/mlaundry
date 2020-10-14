@@ -7,6 +7,9 @@ from util import *
 
 import os
 
+# print("!")
+# exit()
+
 # disable warnings about the https verify=False, which is needed because of
 # shitty certs? idfk, just dont reuse an important password for the site
 disable_warnings(InsecureRequestWarning)
@@ -48,13 +51,18 @@ def print_laun():
         return
     print_wash_dry(username, passw)
 
-try:
-    print_laun()
-except:
-    users = get_users()
-    username = next(iter(users))
-    passw = users[username]
-    print_wash_dry(username, passw)
+# try:
+    # print("Later")
+    # exit(0)
+print_laun()
+# except:
+#     exit()
+
+#     users = get_users()
+#     username = next(iter(users))
+#     passw = users[username]
+#     print_wash_dry(username, passw)
+
     # print("Error")
 
 # print_laun(users)

@@ -61,17 +61,28 @@ def open_browser_with_chromium_session(username, password, session_key=None):
 
 
 def get_logged_browser(user_email, password, browser=None):
+    # proxies = {
+    #         'https': 'socks5://wesselb94@gmail.com:blokzijlfamVPN@socks-nl2.nordvpn.com:1080'
+    #         }
     if not browser:
         browser = mechanicalsoup.StatefulBrowser()
+        # browser.session.proxies = proxies
 
     # get the login page
     response = browser.open("https://duwo.multiposs.nl/login/index.php", verify=False)
 
     # fill and submit the login form
-    form = browser.select_form('form#FormLogin')
+    try:
+        form = browser.select_form('form#FormLogin')
+    except:
+        # print("Login Blocked")
+        print("Blocked until: " + browser.get_current_page().find('span', {'class': 'BtnTxtReload'}).text.split(":", 1)[1])
+        exit()
     form['UserInput'] = user_email
     form['PwdInput'] = password
     browser.submit_selected()
+
+    # print(browser.get_current_page())
 
     # tmp = browser.get_current_page().find('script')
     # print(str(tmp))
