@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 # ACTUAL_DRYER_TIME  = 35
 
 ACTUAL_WASHER_TIME = 50
-ACTUAL_DRYER_TIME  = 30
+ACTUAL_DRYER_TIME  = 35
 
 actual_time_map = {
         'd': ACTUAL_DRYER_TIME,
