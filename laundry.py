@@ -52,15 +52,11 @@ def print_laun():
     print_wash_dry(username, passw)
 
 try:
-    # print("Later")
-    # exit(0)
     print_laun()
 except:
     users = get_users()
     username = next(iter(users))
     passw = users[username]
     print_wash_dry(username, passw)
-
-    # print("Error")
 
 # print_laun(users)
