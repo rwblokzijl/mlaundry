@@ -4,12 +4,16 @@ import os
 
 from datetime import datetime, timedelta
 
-
-# ACTUAL_WASHER_TIME = 55
-# ACTUAL_DRYER_TIME  = 35
+EXPECTED_WASHER_TIME = 50
+EXPECTED_DRYER_TIME  = 40
 
 ACTUAL_WASHER_TIME = 50
 ACTUAL_DRYER_TIME  = 35
+
+expected_time_map = {
+        'd': EXPECTED_DRYER_TIME,
+        'w': EXPECTED_WASHER_TIME
+        }
 
 actual_time_map = {
         'd': ACTUAL_DRYER_TIME,
@@ -119,9 +123,14 @@ def get_avalability(user, password):
         dry = '0'
     return wash, dry
 
+def get_actual_timedelta(time, mtype):
+    expeted_minutes = time.seconds / 60
+    actual_minutes  = expeted_minutes / expected_time_map[mtype] * actual_time_map[mtype]
+    return timedelta(minutes=actual_minutes)
+
 def get_bookings(u, p):
     browser = get_logged_browser(u, p)
-    response = browser.open("https://duwo.multiposs.nl/BookingOverview.php", verify=False)
+    browser.open("https://duwo.multiposs.nl/BookingOverview.php", verify=False)
 
     # parse it for data
     page = browser.get_current_page()
@@ -134,12 +143,11 @@ def get_bookings(u, p):
 
         mtype = rev_machine_map[mtype]
         start = get_datetime(f"{date} {start}")
-        end = start + timedelta(minutes=actual_time_map[mtype])
+        end = get_datetime(f"{date} {end}")
+        end = start + get_actual_timedelta(end-start, mtype)
 
         ans.append((start, end, mtype))
     return ans
-
-# print stuff
 
 def print_wash_dry(user, password):
     wash, dry = get_avalability(user, password)
