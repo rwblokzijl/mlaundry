@@ -152,8 +152,9 @@ def get_bookings(u, p):
 def print_wash_dry(user, password):
     wash, dry = get_avalability(user, password)
 
-    print("wash/dry: (" + wash + "/" + dry + ")")
-    print(wash + "/" + dry)
+    # print("wash/dry: (" + wash + "/" + dry + ")")
+    print(f" {wash}:{dry}")
+    print(f" {wash}:{dry}")
     if(int(wash) == 0):
         pass
     elif(int(wash) == 1):
