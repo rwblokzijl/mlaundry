@@ -10,6 +10,8 @@ EXPECTED_DRYER_TIME  = 40
 ACTUAL_WASHER_TIME = 50
 ACTUAL_DRYER_TIME  = 35
 
+ICON = ""
+
 expected_time_map = {
         'd': EXPECTED_DRYER_TIME,
         'w': EXPECTED_WASHER_TIME
@@ -153,8 +155,8 @@ def print_wash_dry(user, password):
     wash, dry = get_avalability(user, password)
 
     # print("wash/dry: (" + wash + "/" + dry + ")")
-    print(f" {wash}:{dry}")
-    print(f" {wash}:{dry}")
+    print(f"{ICON} {wash};{dry}")
+    print(f"{ICON} {wash};{dry}")
     if(int(wash) == 0):
         pass
     elif(int(wash) == 1):

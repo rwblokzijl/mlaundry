@@ -26,27 +26,27 @@ def print_laun():
     if next_book:
         start, end, mtype = next_book
         if now < end: # Not done yet
-            print(f'{machine_map[mtype]} is done at: {end.strftime("%H:%M")} ({wash}/{dry})')
-            print(f'{machine_map[mtype]} done: {end.strftime("%H:%M")} ({wash}/{dry})')
+            print(f'{ICON} done: {end.strftime("%H:%M")} {wash};{dry}')
+            print(f'{ICON} done: {end.strftime("%H:%M")} {wash};{dry}')
             if now + timedelta(minutes=10) > end: # Done within 10 minutes
                 # Make notify but only once when its done
                 epoch = f"laundry-{start.strftime('%s')}"
                 os.system(f"""[ -f /tmp/{epoch} ] || (((echo "notify-send 'Laundry: ' '{machine_map[mtype]} Done!'" | at {end.strftime("%H:%M")}) &>/dev/null);touch /tmp/{epoch}) """)
                 print("#B8BB26")
         else: #Done
-            print(f'{machine_map[mtype]} finished! ({wash}/{dry})')
-            print(f'{machine_map[mtype]} finished! ({wash}/{dry})')
+            print(f'{ICON} {machine_map[mtype]} finished! {wash};{dry}')
+            print(f'{ICON} {machine_map[mtype]} finished! {wash};{dry}')
             print("#FABD2F")
         return
     start_book = get_next_starting_booking(bookings, delta=timedelta(minutes=10))
     if start_book:
         start, end, mtype = start_book
         if start > now:
-            print(f'{machine_map[mtype]} is booked for: {start.strftime("%H:%M")} ({wash}/{dry})')
-            print(f'{machine_map[mtype]} booked: {start.strftime("%H:%M")} ({wash}/{dry})')
+            print(f'{ICON} booked {start.strftime("%H:%M")} {wash};{dry}')
+            print(f'{ICON} {start.strftime("%H:%M")} {wash};{dry}')
         else: # running now
-            print(f'{machine_map[mtype]} is booked for: NOW! ({wash}/{dry})')
-            print(f'{machine_map[mtype]} booked NOW! ({wash}/{dry})')
+            print(f'{ICON} NOW! {wash};{dry}')
+            print(f'{ICON} NOW! {wash};{dry}')
             print("#FABD2F")
         return
     print_wash_dry(username, passw)
