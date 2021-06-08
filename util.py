@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 EXPECTED_WASHER_TIME = 35
 EXPECTED_DRYER_TIME  = 40
 
-ACTUAL_WASHER_TIME = 50
+ACTUAL_WASHER_TIME = 45
 ACTUAL_DRYER_TIME  = 35
 
 ICON = ""
