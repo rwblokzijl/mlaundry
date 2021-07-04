@@ -127,7 +127,7 @@ def get_avalability(user, password):
 
 def get_actual_timedelta(time, mtype):
     expected_minutes = time.seconds / 60
-    actual_minutes  = expected_minutes / expected_time_map[mtype] * actual_time_map[mtype]
+    actual_minutes  = (expected_minutes / expected_time_map[mtype]) * actual_time_map[mtype]
     return timedelta(minutes=actual_minutes)
 
 def get_bookings(u, p):
