@@ -24,5 +24,3 @@ if __name__ == '__main__':
     passw = users[username]
 
     open_browser_with_chromium_session(username, passw)
-
-    if

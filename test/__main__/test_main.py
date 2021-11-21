@@ -1,6 +1,9 @@
-import unittest
-
 from main import main
+
+from urllib3.exceptions import InsecureRequestWarning
+from urllib3 import disable_warnings
+
+import unittest
 
 SLOW=True
 
