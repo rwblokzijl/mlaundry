@@ -106,6 +106,20 @@ class Duwo:
             dry = '0'
         return wash, dry
 
+    def get_machine_type_mapping(self):
+        page = self.get_page("https://duwo.multiposs.nl/findmachinetypes.php")
+        res = page.find_all('div', {'id': 'BtnMachineType'})
+        res = {MachineType(r.find('span').text):r['name'] for r in res}
+        return res
+
+    def get_reservations(self, type=MachineType.WASHER) -> List[Booking]:
+        mapping = self.get_machine_type_mapping()
+        date = "22-11-2021"
+        type = "45"
+        page = self.get_page(f"https://duwo.multiposs.nl/FindAvailableFromMachineType.php?ObjectMachineTypeID={type}&Start_Date={date}")
+        cal = page.find("div", {"id": "CalendarObject"})
+        print(cal)
+
     def get_time(self):
         # get the Machine Availability "sub" page
         page = self.get_page("https://duwo.multiposs.nl/MachineAvailability.php")

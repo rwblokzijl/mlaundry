@@ -14,11 +14,24 @@ def get_all_bookings(users):
     for user in users:
         yield from Duwo(user)._get_bookings()
 
-def main():
+def print_laundry():
     users = get_all_users()
     bookings = list(get_all_bookings(users))
     wash, dry = Duwo(users[0]).get_avalability()
     print_laun(users, bookings, wash, dry)
 
+def reservations():
+    users = get_all_users()
+    Duwo(users[0]).get_reservations()
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--reservations', '-r', action='store_true')
+    args = parser.parse_args()
+    if args.reservations:
+        return reservations()
+    else:
+        return print_laundry()
+
 if __name__ == '__main__':
-    main()
+    print_laundry()

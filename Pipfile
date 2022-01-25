@@ -12,6 +12,10 @@ mypy = "*"
 requests = "*"
 mechanicalsoup = "*"
 pytest = "*"
+python-anticaptcha = "*"
+websockets = "*"
+websocket-client = "*"
+pillow = "*"
 
 [requires]
 python_version = "3.8"
