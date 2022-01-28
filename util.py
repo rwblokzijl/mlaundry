@@ -127,6 +127,8 @@ def get_avalability(user, password):
 
 def get_actual_timedelta(time, mtype):
     expected_minutes = time.seconds / 60
+    if expected_time_map[mtype] < expected_minutes < 59:
+        return timedelta(minutes=actual_time_map[mtype])
     actual_minutes  = (expected_minutes / expected_time_map[mtype]) * actual_time_map[mtype]
     return timedelta(minutes=actual_minutes)
 
