@@ -25,11 +25,14 @@ def print_wash_dry(user: User, wash, dry):
     elif(int(wash) == 1):
         pass
     elif(int(wash) == 2):
-        print("#FABD2F")
+        pass
+        # print("#FABD2F")
     elif(int(wash) == 3):
-        print("#B8BB26")
+        pass
+        # print("#B8BB26")
     elif(int(wash) == 4):
-        print("#B8BB26")
+        pass
+        # print("#B8BB26")
 
 # helpers
 
