@@ -22,13 +22,13 @@ class mailbox(object):
         self.ws = create_connection("wss://dropmail.me/websocket")
         self.next = self.ws.recv
         self.close = self.ws.close
-        self.email = self.next()[1:].split(":")[0]
-        self.next()
+        print(self.next())
+        mail = self.next()
+        print(mail)
+        self.email = mail[1:].split(":")[0]
+        print(self.next())
 
 def run(box):
-    # stdlib
-    # for box in boxes:
-    # print("waiting for " + box.email)
     result = box.next()
     return "https" + result.split('https')[1].split('\\r\\n\\r\\n","subject"')[0]
 
@@ -59,7 +59,9 @@ def firstPage(browser, email, retries=3):
 
     response = browser.open(url, verify=False)
     image_data = BytesIO(response.content)
+    print("solving_captcha")
     answer = solve_captcha(image_data)
+    print(f"answer: {answer}")
 
     url = "https://duwo.multiposs.nl/login/submit.php?Request=SignUp"
     response = browser.open(url, verify=False)
@@ -68,9 +70,7 @@ def firstPage(browser, email, retries=3):
     form['recoveradress'] = email
     form['captcha_code'] = answer.strip()
     #TODO: this submit is incorrect and blocks the ip
-    print(form)
-    print("TODO: this submit is incorrect and blocks the ip")
-    exit()
+    print(form.print_summary())
     browser.submit_selected()
 
     if("Enter" in browser.get_current_page().find('div', {'id': 'MainLogin'}).
@@ -78,7 +78,6 @@ def firstPage(browser, email, retries=3):
         firstPage(browser, email, retries-1)
 
     return answer
-
 
 def secondPage(browser, link, email, location):
     browser.open(link, verify=False)
@@ -96,10 +95,10 @@ def secondPage(browser, link, email, location):
 
 def create_account(location='FF-1024'):
     box = mailbox()
-    browser = mechanicalsoup.StatefulBrowser()  # Generate fresh browser
-    # print(location + ", " + box.email)
+    print(f"created mail: {box.email}")
+    browser = mechanicalsoup.StatefulBrowser()
 
-    ans = firstPage(browser, box.email)  # Show capcha to user and generate email
+    ans = firstPage(browser, box.email) # Fill in the captcha and email
     if ans is None:
         box.close()
         return None

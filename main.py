@@ -6,8 +6,8 @@ from laundry.duwo import Duwo
 import os
 import argparse
 
-def get_all_users():
-    with open(os.path.abspath(os.path.expanduser("~/.ssh/laundry.creds")), "r") as credentials_file:
+def get_all_users(creds_path="~/.ssh/laundry.creds"):
+    with open(os.path.abspath(os.path.expanduser(creds_path)), "r") as credentials_file:
         return list(get_users(credentials_file))
 
 def get_all_bookings(users):

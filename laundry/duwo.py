@@ -1,5 +1,12 @@
 from urllib3.exceptions import InsecureRequestWarning
 from urllib3 import disable_warnings
+from requests.utils import cookiejar_from_dict
+
+from pathlib import Path
+
+import json
+import os
+
 disable_warnings(InsecureRequestWarning)
 # VERIFY='/home/bloodyfool/devel/mlaundry/cacert.pem'
 VERIFY=False
@@ -53,10 +60,7 @@ def _parse_datetime(date_str, closest_to: datetime = now):
 
     return min(datetimes, key=lambda x: abs(x - closest_to))
 
-def _get_logged_browser(user: User, browser=None):
-    if not browser:
-        browser = mechanicalsoup.StatefulBrowser()
-
+def _login_browser(user: User, browser):
     # get the login page
     browser.open("https://duwo.multiposs.nl/login/index.php", verify=VERIFY)
 
@@ -77,10 +81,65 @@ def _get_logged_browser(user: User, browser=None):
 
     return browser
 
+def _get_browser_from_session(session, browser=None):
+    if not browser:
+        browser = mechanicalsoup.StatefulBrowser()
+    browser.session.cookies = cookiejar_from_dict(session)
+    return browser
+
+def write_to_file(filepath: Path, data: str) -> None:
+    os.makedirs(filepath.parents[0], exist_ok=True)
+    with open(filepath, "w") as f:
+        f.write(data)
+
+def read_from_file(filepath: str) -> str:
+    try:
+        with open(filepath, "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        return None
+
+def get_cached(filepath: Path, func: Callable):
+    if os.path.isfile(filepath):
+        return read_from_file(filepath)
+    else:
+        data = func()
+        write_to_file(filepath, data)
+        return data
+
 class Duwo:
 
-    def __init__(self, user: User):
-        self.browser = _get_logged_browser(user)
+    def __init__(self, user: User, cache_dir=None):
+        self.cache_dir = cache_dir or Path("~/.laundry_cache/").expanduser()
+
+        self.browser = mechanicalsoup.StatefulBrowser()
+        self.user = user
+        self.user_session_path = self.cache_dir / user.email
+
+        self.load_session()
+
+    def _persist_session(self):
+        write_to_file(self.user_session_path, self._get_session())
+
+    def _get_session(self):
+        return json.dumps(self.browser.session.cookies.get_dict())
+
+    def load_session(self):
+        session = read_from_file(self.user_session_path)
+        if session is not None:
+            self.browser.session.cookies = cookiejar_from_dict(json.loads(session))
+        else:
+            _login_browser(self.user, self.browser)
+            self._persist_session()
+
+        if not self._session_active():
+            _login_browser(self.user, self.browser)
+            self._persist_session()
+
+    def _session_active(self):
+        "Returns true if logged in"
+        # Implement this to check whether a session has expired
+        return True
 
     def get_page(self, url):
         self.browser.open(url, verify=VERIFY)
@@ -174,7 +233,7 @@ class Duwo:
 #     cookie_obj = requests.cookies.create_cookie(name='PHPSESSID', value='VF8mr%2CxGqkZdBWWCb1Gqw5YCog8', domain='duwo.multiposs.nl')
 #     browser.session.cookies.set_cookie(cookie_obj)  # This will add your new cookie to existing cookies
 
-#     Duwo(user)._get_logged_browser(user, browser=browser)
+#     Duwo(user)._login_browser(user, browser=browser)
 
 #     os.system("brave https://duwo.multiposs.nl/main.php &")
 
