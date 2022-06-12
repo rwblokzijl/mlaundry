@@ -1,13 +1,13 @@
 from urllib3.exceptions import InsecureRequestWarning
-from urllib3 import disable_warnings
-from requests.utils import cookiejar_from_dict
+from urllib3            import disable_warnings
+disable_warnings(InsecureRequestWarning)
 
 from pathlib import Path
 
 import json
+import sys
 import os
 
-disable_warnings(InsecureRequestWarning)
 # VERIFY='/home/bloodyfool/devel/mlaundry/cacert.pem'
 VERIFY=False
 
@@ -15,19 +15,12 @@ VERIFY=False
 
 import mechanicalsoup
 from mechanicalsoup.utils import LinkNotFoundError
-from datetime import datetime, timedelta
+import datetime
 from dataclasses import dataclass
 
 from enum import Enum
 
 from typing import *
-
-now = datetime.now()
-# now = datetime(2021, 8, 11, 17, 30) # before
-# now = datetime(2021, 8, 11, 17, 50) # during wash
-# now = datetime(2021, 8, 11, 18, 20) # between
-# now = datetime(2021, 8, 11, 18, 50) # during dry
-# now = datetime(2021, 8, 11, 19, 50) # after
 
 class MachineType(Enum):
     DRYER  = 'Dryer'
@@ -35,28 +28,36 @@ class MachineType(Enum):
 
 @dataclass
 class Booking:
-    start_time: datetime
-    end_time: datetime
+    start_time: datetime.datetime
+    end_time: datetime.datetime
     machine_type: MachineType
+
+@dataclass
+class ReservaionTimeSlot:
+    start_time: datetime.datetime
+    end_time: datetime.datetime
+    machine_type: MachineType
+    available: int
+    booked_by_me: bool
 
 @dataclass
 class User:
     email: str
     passw: str
-    session_key: str
 
-def _parse_datetime(date_str, closest_to: datetime = now):
+def _parse_datetime(date_str, closest_to: datetime.datetime = None):
     """
     Parses a datetime string without a year to the closest datetime with those values
     input format: "dd-mm 23:40"
     """
+    closest_to = closest_to or datetime.datetime.now()
 
     candidate_dates = [
             f"{closest_to.year-1}-{date_str}",
             f"{closest_to.year  }-{date_str}",
             f"{closest_to.year+1}-{date_str}",
             ]
-    datetimes = [datetime.strptime(date, "%Y-%d-%m %H:%M") for date in candidate_dates]
+    datetimes = [datetime.datetime.strptime(date, "%Y-%d-%m %H:%M") for date in candidate_dates]
 
     return min(datetimes, key=lambda x: abs(x - closest_to))
 
@@ -81,21 +82,15 @@ def _login_browser(user: User, browser):
 
     return browser
 
-def _get_browser_from_session(session, browser=None):
-    if not browser:
-        browser = mechanicalsoup.StatefulBrowser()
-    browser.session.cookies = cookiejar_from_dict(session)
-    return browser
-
 def write_to_file(filepath: Path, data: str) -> None:
     os.makedirs(filepath.parents[0], exist_ok=True)
-    with open(filepath, "w") as f:
-        f.write(data)
+    with open(filepath, "wb") as f:
+        f.write(data.encode("utf8"))
 
 def read_from_file(filepath: str) -> str:
     try:
-        with open(filepath, "r") as f:
-            return f.read()
+        with open(filepath, "rb") as f:
+            return f.read().decode("utf8")
     except FileNotFoundError:
         return None
 
@@ -109,14 +104,18 @@ def get_cached(filepath: Path, func: Callable):
 
 class Duwo:
 
-    def __init__(self, user: User, cache_dir=None):
-        self.cache_dir = cache_dir or Path("~/.laundry_cache/").expanduser()
+    def __init__(self, user: User, session_cache_dir:Path=None, call_cache_dir:Path=None, load_session=True):
+        self.session_cache_dir = session_cache_dir or Path("~/.laundry_cache/").expanduser()
+        self.call_cache_dir = call_cache_dir and call_cache_dir.expanduser() / user.email
 
         self.browser = mechanicalsoup.StatefulBrowser()
         self.user = user
-        self.user_session_path = self.cache_dir / user.email
+        self.user_session_path = self.session_cache_dir / user.email
 
-        self.load_session()
+        if load_session:
+            session = self._get_session_cookie_from_disk()
+            if session:
+                self.load_session(session)
 
     def _persist_session(self):
         write_to_file(self.user_session_path, self._get_session())
@@ -124,26 +123,61 @@ class Duwo:
     def _get_session(self):
         return json.dumps(self.browser.session.cookies.get_dict())
 
-    def load_session(self):
-        session = read_from_file(self.user_session_path)
+    def login(self):
+        _login_browser(self.user, self.browser)
+        self._persist_session()
+        return self
+
+    def _get_session_cookie_from_disk(self):
+        return read_from_file(self.user_session_path)
+
+    def load_session(self, session):
+        from requests.utils import cookiejar_from_dict
         if session is not None:
             self.browser.session.cookies = cookiejar_from_dict(json.loads(session))
+
+    def _session_active(self, page):
+        if "window.location.href = 'index.html';" in str(page):
+            return False
         else:
-            _login_browser(self.user, self.browser)
-            self._persist_session()
+            return True
 
-        if not self._session_active():
-            _login_browser(self.user, self.browser)
-            self._persist_session()
+    def _get_cached_page(self, url):
+        if not self.call_cache_dir:
+            return None
+        from bs4 import BeautifulSoup
+        url = url.replace("/", "$")
+        today = datetime.datetime.now().strftime("%d-%m-%Y")
+        page_str = read_from_file(self.call_cache_dir / url / today)
+        if page_str is None:
+            return None
+        return BeautifulSoup(page_str, "lxml")
 
-    def _session_active(self):
-        "Returns true if logged in"
-        # Implement this to check whether a session has expired
-        return True
+    def _set_cached_page(self, url, page):
+        if not self.call_cache_dir:
+            return
+        from shutil import rmtree
+        url = url.replace("/", "$")
+        today = datetime.datetime.now().strftime("%d-%m-%Y")
+        rmtree(self.call_cache_dir / url, ignore_errors=True)
+        write_to_file(self.call_cache_dir / url / today, str(page))
 
-    def get_page(self, url):
+    def get_page(self, url, retries=2):
+        from bs4 import BeautifulSoup
+        cached_page = self._get_cached_page(url)
+        if cached_page:
+            return cached_page
+        if retries <= 0:
+            print("Unable to fetch")
+            exit()
         self.browser.open(url, verify=VERIFY)
-        return self.browser.get_current_page()
+        page = self.browser.get_current_page()
+        if not self._session_active(page):
+            print(page, file=sys.stderr)
+            self.login()
+            return self.get_page(url, retries-1)
+        self._set_cached_page(url, page)
+        return page
 
     def get_avalability(self):
         page = self.get_page("https://duwo.multiposs.nl/MachineAvailability.php")
@@ -171,14 +205,6 @@ class Duwo:
         res = {MachineType(r.find('span').text):r['name'] for r in res}
         return res
 
-    def get_reservations(self, type=MachineType.WASHER) -> List[Booking]:
-        mapping = self.get_machine_type_mapping()
-        date = "22-11-2021"
-        type = "45"
-        page = self.get_page(f"https://duwo.multiposs.nl/FindAvailableFromMachineType.php?ObjectMachineTypeID={type}&Start_Date={date}")
-        cal = page.find("div", {"id": "CalendarObject"})
-        print(cal)
-
     def get_time(self):
         # get the Machine Availability "sub" page
         page = self.get_page("https://duwo.multiposs.nl/MachineAvailability.php")
@@ -190,7 +216,7 @@ class Duwo:
 
         return time
 
-    def _get_bookings(self):
+    def get_bookings(self):
         page = self.get_page("https://duwo.multiposs.nl/BookingOverview.php")
 
         rows = page.find_all('tr')[1:]
@@ -209,31 +235,83 @@ class Duwo:
                     machine_type=mtype,
                     )
 
-    def _get_actual_timedelta(self, time, mtype):
-        expected_time = {
-                MachineType.DRYER: 40,
-                MachineType.WASHER: 35
-                }
-        actual_time = {
-                MachineType.DRYER: 35,
-                MachineType.WASHER: 45
-                }
+    def _get_actual_timedelta(self, duration: datetime.timedelta, mtype: MachineType):
+        if mtype == MachineType.WASHER:
+            return datetime.timedelta(minutes=45)
 
-        expected_minutes = time.seconds / 60
-        if expected_time[mtype] < expected_minutes < 59:
-            return timedelta(minutes=actual_time[mtype])
+        expected_dryer_time = 40
+        actual_dryer_time = 35
 
-        actual_minutes  = (expected_minutes / expected_time[mtype]) * actual_time[mtype]
-        return timedelta(minutes=actual_minutes)
+        minutes = int(duration.seconds / 60 / 40) * 35
 
+        return datetime.timedelta(minutes=minutes)
 
-# def open_browser_with_chromium_session(user, session_key=None):
-#     browser = mechanicalsoup.StatefulBrowser()
+    def get_reservation_timeslots(self, mtype, date=None) -> List[ReservaionTimeSlot]:
+        mapping = self.get_machine_type_mapping()
+        if not date:
+            date = datetime.datetime.now()
+        date_str = date.strftime("%d-%m-%Y")
+        page = self.get_page(f"https://duwo.multiposs.nl/FindAvailableFromMachineType.php?ObjectMachineTypeID={mapping[mtype]}&Start_Date={date_str}")
+        timeslots = page.find_all("div", {"class": ["DivCalendarObjectTijdsBlokNotBooked", "BookedByYou", "BookedNotByYou" ]})
+        def map_timeslot(timeslot):
+            print(timeslot["class"])
+            start, end = timeslot.find("span", {"class": "TijdsBlokTijd"}).text.split(" - ")
+            s_h, s_m = start.split(":")
+            e_h, e_m = end.split(":")
+            if "BookedNotByYou" in timeslot["class"]:
+                available    = 0
+            elif "BookedByYou" in timeslot["class"]:
+                available = -1
+            else:
+                available = int(timeslot.find("span", {"class": "TijdsBlokVrij"}).text.split(":")[1])
+            return ReservaionTimeSlot(
+                start_time   = date.combine(date, datetime.time(int(s_h), int(s_m))),
+                end_time     = date.combine(date, datetime.time(int(e_h), int(e_m))),
+                machine_type = mtype,
+                available    = available,
+                booked_by_me = "BookedByYou" in timeslot["class"]
+            )
+        return [map_timeslot(timeslot) for timeslot in timeslots]
 
-#     cookie_obj = requests.cookies.create_cookie(name='PHPSESSID', value='VF8mr%2CxGqkZdBWWCb1Gqw5YCog8', domain='duwo.multiposs.nl')
-#     browser.session.cookies.set_cookie(cookie_obj)  # This will add your new cookie to existing cookies
+    def _make_reservation(self, reservation: ReservaionTimeSlot, count: int, allSlots: List[ReservaionTimeSlot]):
+        "make"
+        "Probably selection of type and date, the 24 is a mystery to me"
+        "https://duwo.multiposs.nl/AnnouncmentBooking.php?value=24|2022-06-14|02:00:00|02:59"
+        "https://duwo.multiposs.nl/ConfirmCreateBooking.php?value=24|2022-06-12|18:00:00|18:59"
 
-#     Duwo(user)._login_browser(user, browser=browser)
+        "remove:"
+        "https://duwo.multiposs.nl/AnnouncmentBooking.php?ResNr=3530860"
+        "https://duwo.multiposs.nl/DeleteBooking.php"
 
-#     os.system("brave https://duwo.multiposs.nl/main.php &")
+        page = self.get_page(f"https://duwo.multiposs.nl/FindAvailableFromMachineType.php?ObjectMachineTypeID={mapping[mtype]}&Start_Date={date_str}")
+        pass
+
+def open_browser_with_chromium_session(user):
+    # from browser import set_cookie_in_brave
+    session = get_cookie_from_brave("duwo.multiposs.nl", "PHPSESSID")
+    duwo = Duwo(user, load_session=False)
+    duwo.load_session(json.dumps({"PHPSESSID":session}))
+    duwo.login()
+
+    # Sad... Cookie gets set, but a new one is still requested
+
+    # cookie_obj = requests.cookies.create_cookie(name='PHPSESSID', value='VF8mr%2CxGqkZdBWWCb1Gqw5YCog8', domain='duwo.multiposs.nl')
+    # browser.session.cookies.set_cookie(cookie_obj)  # This will add your new cookie to existing cookies
+
+    # return
+
+    # import time
+    # time.sleep(10)
+
+    os.system('brave https://duwo.multiposs.nl/main.php &')
+
+def reservations(user):
+    duwo = Duwo(user, load_session=False)
+    duwo.login()
+    tomorrow = datetime.datetime.today() + datetime.timedelta(days=1)
+    res = duwo.get_reservation_timeslots(
+        MachineType.WASHER,
+        tomorrow
+    )
+    [ print(r) for r in res ]
 

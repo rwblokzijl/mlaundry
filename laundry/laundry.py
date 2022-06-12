@@ -1,10 +1,10 @@
 #!/usr/bin/env pipenv-shebang
 
 import os
-from datetime import timedelta
+import datetime
 from typing import *
 
-from laundry.duwo import User, Booking, now
+from laundry.duwo import User, Booking
 
 ICON = ""
 
@@ -14,7 +14,6 @@ def get_users(credentials):
         yield User(
                 email=email,
                 passw=passw,
-                session_key=sess
                 )
 
 def print_wash_dry(user: User, wash, dry):
@@ -39,6 +38,7 @@ def print_wash_dry(user: User, wash, dry):
 def get_next_finished_booking_if_running(bookings: List[Booking], delta) -> Optional[Booking]:
     best_dist = None
     best = None
+    now = datetime.datetime.now()
     for booking in bookings:
         if booking.start_time < now and now - delta < booking.end_time: #delta for extra time to show its done
             dist = abs(booking.end_time - now)
@@ -50,6 +50,7 @@ def get_next_finished_booking_if_running(bookings: List[Booking], delta) -> Opti
 def get_next_starting_booking(bookings: List[Booking], delta) -> Optional[Booking]:
     best_dist = None
     best = None
+    now = datetime.datetime.now()
     for booking in bookings:
         if now - delta < booking.start_time:
             dist = abs(booking.end_time - now)
@@ -59,13 +60,14 @@ def get_next_starting_booking(bookings: List[Booking], delta) -> Optional[Bookin
     return best
 
 def print_laun(users, bookings, wash, dry):
-    next_book = get_next_finished_booking_if_running(bookings, delta=timedelta(minutes=10))
+    next_book = get_next_finished_booking_if_running(bookings, delta=datetime.timedelta(minutes=10))
+    now = datetime.datetime.now()
     if next_book is not None:
         mtype = next_book
         if now < next_book.end_time: # Not done yet
             print(f'{ICON} done: {next_book.end_time.strftime("%H:%M")} {wash};{dry}')
             print(f'{ICON} done: {next_book.end_time.strftime("%H:%M")} {wash};{dry}')
-            if now + timedelta(minutes=10) > next_book.end_time: # Done within 10 minutes
+            if now + datetime.timedelta(minutes=10) > next_book.end_time: # Done within 10 minutes
                 # Make notify but only once when its done
                 epoch = f"laundry-{next_book.start_time.strftime('%s')}"
                 os.system(f"""[ -f /tmp/{epoch} ] || (((echo "notify-send 'Laundry: ' '{next_book.machine_type.value} Done!'" | at {next_book.end_time.strftime("%H:%M")}) &>/dev/null);touch /tmp/{epoch}) """)
@@ -75,7 +77,7 @@ def print_laun(users, bookings, wash, dry):
             print(f'{ICON} {next_book.machine_type.value} finished! {wash};{dry}')
             print("#FABD2F")
         return
-    start_book = get_next_starting_booking(bookings, delta=timedelta(minutes=10))
+    start_book = get_next_starting_booking(bookings, delta=datetime.timedelta(minutes=10))
     if start_book:
         if start_book.start_time > now:
             print(f'{ICON} booked {start_book.start_time.strftime("%H:%M")} {wash};{dry}')

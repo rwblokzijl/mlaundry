@@ -16,6 +16,8 @@ python-anticaptcha = "*"
 websockets = "*"
 websocket-client = "*"
 pillow = "*"
+pycryptodome = "*"
+parameterized = "*"
 
 [requires]
 python_version = "3.8"
