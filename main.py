@@ -1,7 +1,7 @@
 #!/usr/bin/env pipenv-shebang
 
 from laundry.laundry import print_laun, get_users
-from laundry.duwo import Duwo, open_browser_with_chromium_session, reservations
+from laundry.duwo import Duwo, open_browser_with_chromium_session, make_reservation, remove_reservations, show_open_reservations
 
 import os
 import sys
@@ -23,20 +23,27 @@ def print_laundry():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--reservations', '-r', action='store_true')
-    args = parser.parse_args()
-    if args.reservations:
-        return reservations()
-    else:
-        return print_laundry()
+    return print_laundry()
+    # parser.add_argument('--reservations', '-r', action='store_true')
+    # args = parser.parse_args()
+    # if args.reservations:
+    #     return reservations()
+    # else:
+    #     return print_laundry()
 
 if __name__ == '__main__':
     if len(sys.argv) <= 1:
         print_laundry()
     elif sys.argv[1] == "browse":
         users = get_all_users()
-        open_browser_with_chromium_session(users[1])
-    elif sys.argv[1] == "reserve":
+        open_browser_with_chromium_session(users[0])
+    elif sys.argv[1] == "show":
         users = get_all_users()
-        reservations(users[1])
+        show_open_reservations(users[0], *sys.argv[2:])
+    elif sys.argv[1] == "res":
+        users = get_all_users()
+        make_reservation(users[0], *sys.argv[2:])
+    elif sys.argv[1] == "rem":
+        users = get_all_users()
+        remove_reservations(users[0])
 
