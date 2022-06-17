@@ -312,7 +312,7 @@ def show_open_reservations(user, days_ahead=0, machine_type=MachineType.WASHER):
     for reservation in reservations:
         print(f"{reservation.start_time.strftime('%y-%m-%d %H:%M')} | {reservation.available}")
 
-def make_reservation(user, days_ahead=0, start_hour=21, machine_type=MachineType.WASHER):
+def make_reservation(user, days_ahead=0, start_hour=0, machine_type=MachineType.WASHER):
     duwo = Duwo(user, load_session=False)
     duwo.login()
     day = datetime.datetime.today() + datetime.timedelta(days=int(days_ahead))
