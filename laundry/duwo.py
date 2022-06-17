@@ -275,26 +275,15 @@ class Duwo:
         return [map_timeslot(timeslot) for timeslot in timeslots]
 
     def _make_reservation(self, reservation: ReservationTimeSlot):#, reservation: ReservationTimeSlot, count: int, allSlots: List[ReservationTimeSlot]):
-        "make"
-        "Probably selection of type and date, the 24 is a mystery to me"
         mapping = self.get_machine_type_mapping()
         self.get_page(f"https://duwo.multiposs.nl/FindAvailableFromMachineType.php?ObjectMachineTypeID={mapping[reservation.machine_type]}")
         self.get_page(f"https://duwo.multiposs.nl/AnnouncmentBooking.php?value={reservation.query}")
         self.get_page(f"https://duwo.multiposs.nl/ConfirmCreateBooking.php?value={reservation.query}")
         self.get_page(f"https://duwo.multiposs.nl/CreateBooking.php?value={reservation.query}")
-        return
-
-        "remove:"
-        "https://duwo.multiposs.nl/AnnouncmentBooking.php?ResNr=3530860"
-        "https://duwo.multiposs.nl/DeleteBooking.php"
-
-        page = self.get_page(f"https://duwo.multiposs.nl/FindAvailableFromMachineType.php?ObjectMachineTypeID={mapping[mtype]}&Start_Date={date_str}")
-        pass
 
     def _remove_reservation(self, reservation: ReservationTimeSlot ):#, count: int, allSlots: List[ReservationTimeSlot]):
         page = self.get_page(f"https://duwo.multiposs.nl/AnnouncmentBooking.php?ResNr={reservation.query}")
         page = self.get_page(f"https://duwo.multiposs.nl/DeleteBooking.php")
-
 
 def open_browser_with_chromium_session(user):
     # from browser import set_cookie_in_brave
@@ -315,27 +304,27 @@ def open_browser_with_chromium_session(user):
 
     os.system('brave https://duwo.multiposs.nl/main.php &')
 
-def show_open_reservations(user, days=0, machine_type=MachineType.WASHER):
+def show_open_reservations(user, days_ahead=0, machine_type=MachineType.WASHER):
     duwo = Duwo(user, load_session=False)
     duwo.login()
-    day = datetime.datetime.today() + datetime.timedelta(days=int(days))
+    day = datetime.datetime.today() + datetime.timedelta(days=int(days_ahead))
     reservations = duwo.get_reservation_timeslots(machine_type, day)
     for reservation in reservations:
         print(f"{reservation.start_time.strftime('%y-%m-%d %H:%M')} | {reservation.available}")
 
-def make_reservation(user, days=0, hour=21, machine_type=MachineType.WASHER):
+def make_reservation(user, days_ahead=0, start_hour=21, machine_type=MachineType.WASHER):
     duwo = Duwo(user, load_session=False)
     duwo.login()
-    day = datetime.datetime.today() + datetime.timedelta(days=int(days))
+    day = datetime.datetime.today() + datetime.timedelta(days=int(days_ahead))
     reservations = duwo.get_reservation_timeslots(machine_type, day)
-    reservation = [t for t in reservations if t.start_time.time() >= datetime.time(int(hour), 0) and t.available > 0][0] # first available after 'hour'
+    reservation = [t for t in reservations if t.start_time.time() >= datetime.time(int(start_hour), 0) and t.available > 0][0] # first available machine after 'start_hour'
     duwo._make_reservation(reservation)
 
-def remove_reservations(user, days=0):
+def remove_reservations(user, days_ahead=0):
     print(user)
     duwo = Duwo(user, load_session=False)
     duwo.login()
-    day = datetime.datetime.today() + datetime.timedelta(days=int(days))
+    day = datetime.datetime.today() + datetime.timedelta(days=int(days_ahead))
     reservations = duwo.get_reservation_timeslots(MachineType.WASHER, day)
     reservations = [t for t in reservations if t.booked_by_me]
     for reservation in reservations:

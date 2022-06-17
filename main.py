@@ -45,5 +45,5 @@ if __name__ == '__main__':
         make_reservation(users[0], *sys.argv[2:])
     elif sys.argv[1] == "rem":
         users = get_all_users()
-        remove_reservations(users[0])
+        remove_reservations(users[0], *sys.argv[2:])
 
