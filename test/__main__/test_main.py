@@ -1,4 +1,4 @@
-from main import main
+from main import main, make_parser
 
 from urllib3.exceptions import InsecureRequestWarning
 from urllib3 import disable_warnings
@@ -17,8 +17,12 @@ class TestAcceptance(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @unittest.skipUnless(SLOW, "slow")
-    def test_get_laundry(self):
-        disable_warnings(InsecureRequestWarning)
-        main()
+class TestParser(unittest.TestCase):
+
+    def parse(self, string):
+        return make_parser().parse_args(string.split())
+
+    def test_parse_plain(self):
+        args = self.parse("")
+        print(args)
 

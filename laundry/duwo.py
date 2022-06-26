@@ -46,6 +46,18 @@ class User:
     email: str
     passw: str
 
+def get_users(credentials):
+    for line in credentials:
+        email, passw, sess = line.split()
+        yield User(
+                email=email,
+                passw=passw,
+                )
+
+def get_all_users(creds_path="~/.ssh/laundry.creds"):
+    with open(os.path.abspath(os.path.expanduser(creds_path)), "r") as credentials_file:
+        return list(get_users(credentials_file))
+
 def _parse_datetime(date_str, closest_to: datetime.datetime = None):
     """
     Parses a datetime string without a year to the closest datetime with those values
@@ -304,15 +316,22 @@ def open_browser_with_chromium_session(user):
 
     os.system('brave https://duwo.multiposs.nl/main.php &')
 
-def show_open_reservations(user, days_ahead=0, machine_type=MachineType.WASHER):
+def show_users():
+    users = get_all_users()
+    for index, user in enumerate(users):
+        print(f" {index} | {user.email}")
+
+def show_open_reservations(user_index, days_ahead=0, machine_type=MachineType.WASHER):
+    user = get_all_users()[user_index]
     duwo = Duwo(user, load_session=False)
     duwo.login()
     day = datetime.datetime.today() + datetime.timedelta(days=int(days_ahead))
     reservations = duwo.get_reservation_timeslots(machine_type, day)
     for reservation in reservations:
-        print(f"{reservation.start_time.strftime('%y-%m-%d %H:%M')} | {reservation.available}")
+        print(f" {reservation.start_time.strftime('%y-%m-%d %H:%M')} | {reservation.available}")
 
-def make_reservation(user, days_ahead=0, start_hour=0, machine_type=MachineType.WASHER):
+def make_reservation(user_index, days_ahead=0, start_hour=0, machine_type=MachineType.WASHER):
+    user = get_all_users()[user_index]
     duwo = Duwo(user, load_session=False)
     duwo.login()
     day = datetime.datetime.today() + datetime.timedelta(days=int(days_ahead))
@@ -320,12 +339,13 @@ def make_reservation(user, days_ahead=0, start_hour=0, machine_type=MachineType.
     reservation = [t for t in reservations if t.start_time.time() >= datetime.time(int(start_hour), 0) and t.available > 0][0] # first available machine after 'start_hour'
     duwo._make_reservation(reservation)
 
-def remove_reservations(user, days_ahead=0):
+def remove_reservations(user_index, days_ahead=0, machine_type=MachineType.WASHER):
+    user = get_all_users()[user_index]
     print(user)
     duwo = Duwo(user, load_session=False)
     duwo.login()
     day = datetime.datetime.today() + datetime.timedelta(days=int(days_ahead))
-    reservations = duwo.get_reservation_timeslots(MachineType.WASHER, day)
+    reservations = duwo.get_reservation_timeslots(machine_type, day)
     reservations = [t for t in reservations if t.booked_by_me]
     for reservation in reservations:
         duwo._remove_reservation(reservation)

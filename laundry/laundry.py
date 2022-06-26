@@ -8,14 +8,6 @@ from laundry.duwo import User, Booking
 
 ICON = ""
 
-def get_users(credentials):
-    for line in credentials:
-        email, passw, sess = line.split()
-        yield User(
-                email=email,
-                passw=passw,
-                )
-
 def print_wash_dry(user: User, wash, dry):
     print(f"{ICON} {wash};{dry}")
     print(f"{ICON} {wash};{dry}")
