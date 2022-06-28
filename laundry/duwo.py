@@ -338,10 +338,12 @@ def make_reservation(user_index, days_ahead=0, start_hour=0, machine_type=Machin
     reservations = duwo.get_reservation_timeslots(machine_type, day)
     reservation = [t for t in reservations if t.start_time.time() >= datetime.time(int(start_hour), 0) and t.available > 0][0] # first available machine after 'start_hour'
     duwo._make_reservation(reservation)
+    reservations = duwo.get_reservation_timeslots(machine_type, day)
+    for reservation in reservations:
+        print(f" {reservation.start_time.strftime('%y-%m-%d %H:%M')} | {reservation.available}")
 
 def remove_reservations(user_index, days_ahead=0, machine_type=MachineType.WASHER):
     user = get_all_users()[user_index]
-    print(user)
     duwo = Duwo(user, load_session=False)
     duwo.login()
     day = datetime.datetime.today() + datetime.timedelta(days=int(days_ahead))
@@ -349,3 +351,6 @@ def remove_reservations(user_index, days_ahead=0, machine_type=MachineType.WASHE
     reservations = [t for t in reservations if t.booked_by_me]
     for reservation in reservations:
         duwo._remove_reservation(reservation)
+    reservations = duwo.get_reservation_timeslots(machine_type, day)
+    for reservation in reservations:
+        print(f" {reservation.start_time.strftime('%y-%m-%d %H:%M')} | {reservation.available}")
