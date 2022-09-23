@@ -72,7 +72,7 @@ def print_laun(users, bookings, wash, dry):
     start_book = get_next_starting_booking(bookings, delta=datetime.timedelta(minutes=10))
     if start_book:
         if start_book.start_time > now:
-            print(f'{ICON} booked {start_book.start_time.strftime("%H:%M")} {wash};{dry}')
+            print(f'{ICON} {start_book.start_time.strftime("%H:%M")} {wash};{dry}')
             print(f'{ICON} {start_book.start_time.strftime("%H:%M")} {wash};{dry}')
         else: # running now
             print(f'{ICON} NOW! {wash};{dry}')
